@@ -19,6 +19,31 @@ using namespace viso2;
 namespace p = boost::python;
 namespace np = p::numpy;
 
+// Converts a C++ vector to a python list
+// // http://stackoverflow.com/questions/5314319/how-to-export-stdvector
+template <class T>
+struct VectorToListConverter
+{
+    static PyObject *convert(const std::vector<T> &vector)
+    {
+        boost::python::list *l = new boost::python::list();
+        for (const auto &el : vector)
+        {
+            l->append(el);
+	}
+	return l->ptr();
+    }
+};
+// // tell the vector indexing suite not to use operator == since undefined
+//    namespace boost { namespace python{namespace indexing {
+//    template<>
+//    struct value_traits<Matcher::p_match> : public value_traits<int>
+//    {
+//        static bool const equality_comparable = false;
+//        static bool const lessthan_comparable = false;
+//    };
+//    }}}
+
 ///@brief Wrap the push back call of matcher.
 ///       It requires that the passed NumPy array be exactly what we're 
 ///       looking for - no conversion from nested sequences or arrays with 
@@ -81,9 +106,13 @@ BOOST_PYTHON_MODULE(matcher)
         .def_readwrite("i2c", &Matcher::p_match::i2c);
 
     using Matches = std::vector<Matcher::p_match>;
-    p::class_<Matches>("Matches").def(p::vector_indexing_suite<Matches>());
+//     p::class_<Matches>("Matches").def(p::vector_indexing_suite<Matches>());
+    p::to_python_converter<Matches, VectorToListConverter<Matcher::p_match>>();
 
     p::class_<Matcher, boost::noncopyable>("Matcher", p::init<Matcher::parameters>())
         .def("getMatches", &Matcher::getMatches)
         .def("matchFeatures", &Matcher::matchFeatures, matchFeatures_overload());
+
+    p::def("pushBack", &wrapMatcherPushBack);
+}
 

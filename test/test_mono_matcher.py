@@ -5,7 +5,7 @@ import cv2
 import os
 import unittest
 
-import matcher_python_binding.matcher as matcher
+import viso2.matcher as matcher
 
 # def plot(features, img):
 #    
